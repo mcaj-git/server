@@ -327,8 +327,10 @@ class OwnershipTransferService {
 			if (empty($sharePage)) {
 				break;
 			}
-
-			$shares = array_merge($shares, $sharePage);
+			foreach ($sharePage as $singleShare) {
+				$shares[] = $singleShare;
+			}
+			// $shares = array_merge($shares, $sharePage);
 			$offset += 50;
 		}
 
@@ -411,7 +413,7 @@ class OwnershipTransferService {
 								   string $destinationUid,
 								   array $sourceShares,
 								   array $destinationShares,
-								   OutputInterface $output) {
+								   OutputInterface $output): void {
 		$output->writeln("Restoring incoming shares ...");
 		$progress = new ProgressBar($output, count($sourceShares));
 
@@ -423,6 +425,7 @@ class OwnershipTransferService {
 				} else {
 					$sameFileSharedWithDestination = false;
 					$shareDeleted = false;
+					// Keep the share which has the most permissions and discard the other one.
 					foreach ($destinationShares as $key => $destinationShare) {
 						if ($share->getNodeId() === $destinationShare->getNodeId()) {
 							$sameFileSharedWithDestination = true;
@@ -439,22 +442,19 @@ class OwnershipTransferService {
 						}
 					}
 
-					if ($sameFileSharedWithDestination === false) {
-						if ($share->getShareOwner() === $destinationUid) {
-							$this->shareManager->deleteShare($share);
-							$shareDeleted = true;
-						} else {
-							$share->setSharedWith($destinationUid);
-						}
+					if ($shareDeleted) continue;
+					if ($sameFileSharedWithDestination === false &&
+						$share->getShareOwner() === $destinationUid) {
+						$this->shareManager->deleteShare($share);
+						continue;
 					}
 
+					$share->setSharedWith($destinationUid);
 					// trigger refetching of the node so that the new owner and mountpoint are taken into account
 					// otherwise the checks on the share update will fail due to the original node not being available in the new user scope
 					$this->userMountCache->clear();
-					if (!$shareDeleted) {
-						$share->setNodeId($share->getNode()->getId());
-						$this->shareManager->updateShare($share);
-					}
+					$share->setNodeId($share->getNode()->getId());
+					$this->shareManager->updateShare($share);
 				}
 			} catch (\OCP\Files\NotFoundException $e) {
 				$output->writeln('<error>Share with id ' . $share->getId() . ' points at deleted file, skipping</error>');
