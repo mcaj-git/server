@@ -193,7 +193,8 @@ class OwnershipTransferService {
 			$destinationShares = $this->collectIncomingShares(
 				$destinationUid,
 				$output,
-				$view
+				$view,
+				true
 			);
 			$this->transferIncomingShares(
 				$sourceUid,
@@ -314,7 +315,8 @@ class OwnershipTransferService {
 
 	private function collectIncomingShares(string $sourceUid,
 										OutputInterface $output,
-										View $view): array {
+										View $view,
+										$addKeys = false): array {
 		$output->writeln("Collecting all incoming share information for files and folders of $sourceUid ...");
 
 		$shares = [];
@@ -327,9 +329,16 @@ class OwnershipTransferService {
 			if (empty($sharePage)) {
 				break;
 			}
-			foreach ($sharePage as $singleShare) {
-				$shares[] = $singleShare;
+			if ($addKeys) {
+				foreach ($sharePage as $singleShare) {
+					$shares[$singleShare->getNodeId()] = $singleShare;
+				}
+			} else {
+				foreach ($sharePage as $singleShare) {
+					$shares[] = $singleShare;
+				}
 			}
+
 			// $shares = array_merge($shares, $sharePage);
 			$offset += 50;
 		}
@@ -422,33 +431,23 @@ class OwnershipTransferService {
 				if ($share->getShareType() === IShare::TYPE_USER &&
 					$share->getSharedBy() === $destinationUid) {
 					$this->shareManager->deleteShare($share);
-				} else {
-					$sameFileSharedWithDestination = false;
-					$shareDeleted = false;
+				} else if (isset($destinationShares[$share->getNodeId()])) {
+					$destinationShare = $destinationShares[$share->getNodeId()];
 					// Keep the share which has the most permissions and discard the other one.
-					foreach ($destinationShares as $key => $destinationShare) {
-						if ($share->getNodeId() === $destinationShare->getNodeId()) {
-							$sameFileSharedWithDestination = true;
-							if ($destinationShare->getPermissions() < $share->getPermissions()) {
-								array_splice($destinationShares, $key, 1);
-								$this->shareManager->deleteShare($destinationShare);
-								$share->setSharedWith($destinationUid);
-								break;
-							}
-
-							$this->shareManager->deleteShare($share);
-							$shareDeleted = true;
-							break;
-						}
-					}
-
-					if ($shareDeleted) continue;
-					if ($sameFileSharedWithDestination === false &&
-						$share->getShareOwner() === $destinationUid) {
-						$this->shareManager->deleteShare($share);
+					if ($destinationShare->getPermissions() < $share->getPermissions()) {
+						$this->shareManager->deleteShare($destinationShare);
+						$share->setSharedWith($destinationUid);
+						// trigger refetching of the node so that the new owner and mountpoint are taken into account
+						// otherwise the checks on the share update will fail due to the original node not being available in the new user scope
+						$this->userMountCache->clear();
+						$share->setNodeId($share->getNode()->getId());
+						$this->shareManager->updateShare($share);
 						continue;
 					}
-
+					$this->shareManager->deleteShare($share);
+				} else if ($share->getShareOwner() === $destinationUid) {
+					$this->shareManager->deleteShare($share);
+				} else {
 					$share->setSharedWith($destinationUid);
 					// trigger refetching of the node so that the new owner and mountpoint are taken into account
 					// otherwise the checks on the share update will fail due to the original node not being available in the new user scope
