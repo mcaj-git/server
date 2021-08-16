@@ -171,10 +171,12 @@ class URLGenerator implements IURLGenerator {
 	 * Returns the path to the image.
 	 */
 	public function imagePath(string $appName, string $file): string {
-		$cache = $this->cacheFactory->createDistributed('imagePath-'.md5($this->getBaseUrl()).'-');
-		$cacheKey = $appName.'-'.$file;
-		if ($key = $cache->get($cacheKey)) {
-			return $key;
+		if ($file !== 'manifest.json') {
+			$cache = $this->cacheFactory->createDistributed('imagePath-'.md5($this->getBaseUrl()).'-');
+			$cacheKey = $appName.'-'.$file;
+			if ($key = $cache->get($cacheKey)) {
+				return $key;
+			}
 		}
 
 		// Read the selected theme from the config file
@@ -231,7 +233,9 @@ class URLGenerator implements IURLGenerator {
 		}
 
 		if ($path !== '') {
-			$cache->set($cacheKey, $path);
+			if ($file !== 'manifest.json') {
+				$cache->set($cacheKey, $path);
+			}
 			return $path;
 		}
 
