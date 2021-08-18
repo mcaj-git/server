@@ -24,6 +24,8 @@
  */
 namespace OC\Core\Command;
 
+use OC_Util;
+use OCP\Util;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -38,11 +40,17 @@ class Status extends Base {
 	}
 
 	protected function execute(InputInterface $input, OutputInterface $output): int {
+		$config = \OC::$server->getConfig();
+		$defaults = \OC::$server->getThemingDefaults();
 		$values = [
-			'installed' => (bool) \OC::$server->getConfig()->getSystemValue('installed', false),
-			'version' => implode('.', \OCP\Util::getVersion()),
-			'versionstring' => \OC_Util::getVersionString(),
+			'installed' => (bool) $config->getSystemValue('installed', false),
+			'version' => implode('.', Util::getVersion()),
+			'versionstring' => OC_Util::getVersionString(),
 			'edition' => '',
+			'maintenance' => (bool) $config->getSystemValue('maintenance', false),
+			'needsDbUpgrade' => Util::needUpgrade(),
+			'productname' => $defaults->getProductName(),
+			'extendedSupport' => Util::hasExtendedSupport()
 		];
 
 		$this->writeArrayInOutputFormat($input, $output, $values);
