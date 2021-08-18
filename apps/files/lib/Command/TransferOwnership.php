@@ -68,7 +68,7 @@ class TransferOwnership extends Command {
 	protected function configure() {
 		$this
 			->setName('files:transfer-ownership')
-			->setDescription('All files and folders are moved to another user - shares are moved as well.')
+			->setDescription('All files and folders are moved to another user - outgoing shares and incoming user file shares (optionally) are moved as well.')
 			->addArgument(
 				'source-user',
 				InputArgument::REQUIRED,
@@ -94,7 +94,7 @@ class TransferOwnership extends Command {
 				'transfer-incoming-shares',
 				null,
 				InputOption::VALUE_OPTIONAL,
-				'transfer incoming file shares to destination user. Usage: --transfer-incoming-shares=1 (value required)',
+				'transfer incoming user file shares to destination user. Usage: --transfer-incoming-shares=1 (value required)',
 				'2'
 		);
 	}
