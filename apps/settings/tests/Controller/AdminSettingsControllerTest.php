@@ -110,10 +110,11 @@ class AdminSettingsControllerTest extends TestCase {
 			->method('isSubAdmin')
 			->with($user)
 			->willReturn(false);
+		$adminSettings = [1 => []];
 		$this->settingsManager
 			->expects($this->once())
 			->method('getAdminSections')
-			->willReturn([]);
+			->willReturn($adminSettings);
 		$this->settingsManager
 			->expects($this->once())
 			->method('getPersonalSections')
@@ -126,7 +127,7 @@ class AdminSettingsControllerTest extends TestCase {
 
 		$idx = $this->adminSettingsController->index('test');
 
-		$expected = new TemplateResponse('settings', 'settings/frame', ['forms' => ['personal' => [], 'admin' => []], 'content' => '']);
+		$expected = new TemplateResponse('settings', 'settings/frame', ['forms' => ['personal' => [], 'admin' => $adminSettings], 'content' => '']);
 		$this->assertEquals($expected, $idx);
 	}
 }
