@@ -104,14 +104,14 @@ trait CommonSettingsTrait {
 		return $templateParameters;
 	}
 
-	protected function formatPersonalSections($currentType, $currentSections) {
+	protected function formatPersonalSections(string $currentType, string $currentSections): array {
 		$sections = $this->settingsManager->getPersonalSections();
 		$templateParameters = $this->formatSections($sections, $currentSections, 'personal', $currentType);
 
 		return $templateParameters;
 	}
 
-	protected function formatAdminSections($currentType, $currentSections) {
+	protected function formatAdminSections(string $currentType, string $currentSections): array {
 		$sections = $this->settingsManager->getAdminSections();
 		$templateParameters = $this->formatSections($sections, $currentSections, 'admin', $currentType);
 
@@ -119,7 +119,7 @@ trait CommonSettingsTrait {
 	}
 
 	/**
-	 * @param array<int, list<OCP\Settings\ISettings>> $settings
+	 * @param array<int, list<\OCP\Settings\ISettings>> $settings
 	 * @return array
 	 */
 	private function formatSettings(array $settings): array {

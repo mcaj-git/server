@@ -71,7 +71,9 @@ class AuthorizedGroupMapper extends QBMapper {
 		$queryBuilder->select('*')
 			->from($this->getTableName())
 			->where($queryBuilder->expr()->eq('id', $queryBuilder->createNamedParameter($id)));
-		return $this->findEntity($queryBuilder);
+		/** @var AuthorizedGroup $authorizedGroup */
+		$authorizedGroup = $this->findEntity($queryBuilder);
+		return $authorizedGroup;
 	}
 
 	/**
@@ -87,14 +89,14 @@ class AuthorizedGroupMapper extends QBMapper {
 	}
 
 	public function findByGroupIdAndClass(string $groupId, string $class) {
-		$queryBuilder = $this->db->getQueryBuilder();
-		$queryBuilder->select('*')
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
 			->from($this->getTableName())
-			->where($queryBuilder->expr()->andX(
-				$queryBuilder->expr()->eq('group_id', $groupId),
-				$queryBuilder->expr()->eq('class', $class)
+			->where($qb->expr()->andX(
+				$qb->expr()->eq('group_id', $qb->createNamedParameter($groupId)),
+				$qb->expr()->eq('class', $qb->createNamedParameter($class))
 			));
-		return $this->findEntity($queryBuilder);
+		return $this->findEntity($qb);
 	}
 
 	/**
@@ -102,14 +104,11 @@ class AuthorizedGroupMapper extends QBMapper {
 	 * @throws \OCP\DB\Exception
 	 */
 	public function findOldGroups(string $class): array {
-		$queryBuilder = $this->db->getQueryBuilder();
-		$queryBuilder->select('*')
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
 			->from($this->getTableName())
-			->where(
-				$queryBuilder->expr()->eq('class', ':class:')
-			)
-			->setParameter('class', $class);
-		return $this->findEntities($queryBuilder);
+			->where($qb->expr()->eq('class', $qb->createNamedParameter($class)));
+		return $this->findEntities($qb);
 	}
 
 	/**
@@ -118,8 +117,7 @@ class AuthorizedGroupMapper extends QBMapper {
 	public function removeGroup(string $gid) {
 		$qb = $this->db->getQueryBuilder();
 		$qb->delete($this->getTableName())
-			->where($qb->expr()->eq('group_id', ':gid:'))
-			->setParameter('gid', $gid)
+			->where($qb->expr()->eq('group_id', $qb->createNamedParameter($gid)))
 			->executeStatement();
 	}
 }
